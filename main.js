@@ -89,8 +89,97 @@ const ROOT_HGAP = 90;
 const PAD = 60;
 const PLACEHOLDER = 'New Title';
 
+class LightMindMapSettingTab extends obsidian.PluginSettingTab {
+  constructor(app, plugin) {
+    super(app, plugin);
+    this.plugin = plugin;
+  }
+
+  display() {
+    const { containerEl } = this;
+    containerEl.empty();
+
+    containerEl.createEl('h2', { text: 'Light Mindmap Settings' });
+
+    new obsidian.Setting(containerEl)
+      .setName('Default theme')
+      .setDesc('Choose the default theme for new mindmaps')
+      .addDropdown((dropdown) =>
+        dropdown
+          .addOption('vibrant', 'Vibrant')
+          .addOption('classic', 'Classic')
+          .addOption('fresh', 'Fresh')
+          .addOption('ocean', 'Ocean')
+          .addOption('sunset', 'Sunset')
+          .addOption('midnight', 'Midnight')
+          .addOption('slate', 'Slate')
+          .setValue(this.plugin.settings?.defaultTheme || 'vibrant')
+          .onChange(async (value) => {
+            this.plugin.settings.defaultTheme = value;
+            await this.plugin.saveSettings();
+          })
+      );
+
+    new obsidian.Setting(containerEl)
+      .setName('Default layout')
+      .setDesc('Choose the default layout for new mindmaps')
+      .addDropdown((dropdown) =>
+        dropdown
+          .addOption('balanced', 'Balanced')
+          .addOption('right', 'Right')
+          .addOption('left', 'Left')
+          .addOption('tree', 'Tree')
+          .addOption('radial', 'Radial')
+          .setValue(this.plugin.settings?.defaultLayout || 'balanced')
+          .onChange(async (value) => {
+            this.plugin.settings.defaultLayout = value;
+            await this.plugin.saveSettings();
+          })
+      );
+
+    new obsidian.Setting(containerEl)
+      .setName('Default line style')
+      .setDesc('Choose the default line style for new mindmaps')
+      .addDropdown((dropdown) =>
+        dropdown
+          .addOption('curve', 'Smooth')
+          .addOption('straight', 'Straight')
+          .addOption('polyline', 'Right Angle')
+          .addOption('polyline-dashed', 'Right Angle Dashed')
+          .addOption('curve-dashed', 'Smooth Dashed')
+          .setValue(this.plugin.settings?.defaultLine || 'curve')
+          .onChange(async (value) => {
+            this.plugin.settings.defaultLine = value;
+            await this.plugin.saveSettings();
+          })
+      );
+
+    new obsidian.Setting(containerEl)
+      .setName('Default node style')
+      .setDesc('Choose the default node style for new mindmaps')
+      .addDropdown((dropdown) =>
+        dropdown
+          .addOption('rounded', 'Rounded')
+          .addOption('square', 'Square')
+          .addOption('borderless', 'Borderless')
+          .addOption('circle', 'Pill')
+          .addOption('doodle', 'Doodle')
+          .setValue(this.plugin.settings?.defaultNodeStyle || 'rounded')
+          .onChange(async (value) => {
+            this.plugin.settings.defaultNodeStyle = value;
+            await this.plugin.saveSettings();
+          })
+      );
+
+    containerEl.createEl('h3', { text: 'About' });
+    containerEl.createEl('p', { text: 'Version: ' + this.plugin.manifest.version });
+    containerEl.createEl('p', { text: 'Render Markdown headings as interactive mindmaps.' });
+  }
+}
+
 class LightMindMapPlugin extends obsidian.Plugin {
   async onload() {
+    await this.loadSettings();
     this._scan = obsidian.debounce(() => this._doScan(), 120);
     this._fileCache = null;
     this._fileCacheTime = 0;
@@ -163,6 +252,9 @@ class LightMindMapPlugin extends obsidian.Plugin {
 
     // Inject SVG filter for doodle node style
     this._injectDoodleFilter();
+
+    // Register settings tab
+    this.addSettingTab(new LightMindMapSettingTab(this.app, this));
   }
 
   onunload() {
@@ -173,6 +265,14 @@ class LightMindMapPlugin extends obsidian.Plugin {
     document.querySelectorAll('.lmm-fab').forEach((el) => el.remove());
     const doodleSvg = document.getElementById('lmm-doodle-filter');
     if (doodleSvg) doodleSvg.closest('svg').remove();
+  }
+
+  async loadSettings() {
+    this.settings = Object.assign({}, { defaultTheme: 'vibrant', defaultLayout: 'balanced', defaultLine: 'curve', defaultNodeStyle: 'rounded' }, await this.loadData());
+  }
+
+  async saveSettings() {
+    await this.saveData(this.settings);
   }
 
   async _doScan() {
