@@ -1900,14 +1900,50 @@ class LightMindMapPlugin extends obsidian.Plugin {
       this._applyTransform(inner, canvas._lmm);
     };
     const onUp = () => { dragging = false; canvas.classList.remove('lmm-dragging'); };
+    const onDragMove = (e) => {
+      if (!overlay._lmmDragging) {
+        if (overlay._lmmDragTimer) {
+          const dx = e.clientX - overlay._lmmDragStartX;
+          const dy = e.clientY - overlay._lmmDragStartY;
+          if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+            clearTimeout(overlay._lmmDragTimer);
+            overlay._lmmDragTimer = null;
+          }
+        }
+        return;
+      }
+
+      this._updateDragClone(overlay, e.clientX, e.clientY);
+      this._detectDropTarget(overlay, e.clientX, e.clientY);
+    };
+
+    const onDragUp = (e) => {
+      if (overlay._lmmDragTimer) {
+        clearTimeout(overlay._lmmDragTimer);
+        overlay._lmmDragTimer = null;
+      }
+
+      if (!overlay._lmmDragging) return;
+
+      if (overlay._lmmDropTarget && overlay._lmmDropPosition) {
+        this._moveNode(overlay, overlay._lmmDragNode, overlay._lmmDropTarget, overlay._lmmDropPosition);
+      }
+
+      this._endDrag(overlay);
+    };
+
     canvas.addEventListener('mousedown', onDown);
     window.addEventListener('mousemove', onMove);
     window.addEventListener('mouseup', onUp);
+    window.addEventListener('mousemove', onDragMove);
+    window.addEventListener('mouseup', onDragUp);
     const prevCleanup = overlay._lmmCleanup;
     overlay._lmmCleanup = () => {
       if (prevCleanup) prevCleanup();
       window.removeEventListener('mousemove', onMove);
       window.removeEventListener('mouseup', onUp);
+      window.removeEventListener('mousemove', onDragMove);
+      window.removeEventListener('mouseup', onDragUp);
     };
 
     // ── Touch support ──
