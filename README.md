@@ -120,6 +120,8 @@ Nodes can be edited directly on the canvas — changes are written back to the m
 | Add child (without editing)   | Select node, press **Tab**                     |
 | Delete node                   | Select node, press **Delete** or **Backspace** |
 | Collapse / expand node        | Select node, press **Space**                   |
+| Drag node (change parent)     | Drag node to center of another node            |
+| Drag node (reorder)           | Drag node to top/bottom of another node        |
 | Right-click context menu      | Right-click on node                            |
 
 - The root node cannot be deleted.
@@ -333,6 +335,8 @@ type: mindmap
 | 添加子节点（无需编辑）     | 选中节点后按 **Tab**                    |
 | 删除节点                   | 选中节点后按 **Delete** 或 **Backspace**|
 | 折叠/展开节点              | 选中节点后按 **Space**                  |
+| 拖拽节点（改变父节点）     | 拖拽节点到另一个节点的中心区域         |
+| 拖拽节点（调整顺序）       | 拖拽节点到另一个节点的上方或下方区域   |
 | 右键上下文菜单             | 右键点击节点                            |
 
 - 根节点不可删除。
