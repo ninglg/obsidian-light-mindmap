@@ -850,6 +850,7 @@ class LightMindMapPlugin extends obsidian.Plugin {
       e.stopPropagation();
       if (el.isContentEditable) return;
       if (e.target.closest('.lmm-link')) return;
+      if (overlay._lmmDragging) return;
       this._selectNode(overlay, node, true);
     });
     el.addEventListener('dblclick', (e) => {
