@@ -667,60 +667,99 @@
 
 /* ---------- Node Drag and Drop ---------- */
 
-/* Dragging source node */
+/* Dragging source node - subtle fade to show it's being moved */
 .lmm-dragging-source {
-  opacity: 0.5 !important;
+  opacity: 0.35 !important;
   pointer-events: none;
   transform: none !important;
+  filter: grayscale(0.3);
+  transition: opacity 0.15s ease, filter 0.15s ease;
 }
 
-/* Clone following mouse */
+/* Clone following mouse - prominent floating card */
 .lmm-drag-clone {
   position: fixed;
   pointer-events: none;
-  opacity: 0.85;
+  opacity: 0.95;
   z-index: 1000;
   transform: translate(-50%, -50%);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
-  transition: none !important;
+  box-shadow: 
+    0 12px 32px rgba(0, 0, 0, 0.28),
+    0 4px 12px rgba(0, 0, 0, 0.15),
+    0 0 0 2px rgba(99, 102, 241, 0.4);
+  border-radius: 12px;
+  transition: box-shadow 0.15s ease;
 }
 
-.lmm-drag-clone:hover {
-  transform: translate(-50%, -50%) scale(1.04);
-}
-
-/* Drop target highlight */
+/* Drop target highlight - clear pulsing glow */
 .lmm-drop-target {
-  outline: 2px dashed var(--lmm-theme-root-accent, #6366F1);
-  outline-offset: 4px;
-  animation: lmm-pulse 1s infinite;
+  outline: 2.5px solid var(--lmm-theme-root-accent, #6366F1);
+  outline-offset: 5px;
+  animation: lmm-pulse 0.8s ease-in-out infinite;
+  box-shadow: 0 0 12px rgba(99, 102, 241, 0.35);
 }
 
 @keyframes lmm-pulse {
-  0%, 100% { outline-color: var(--lmm-theme-root-accent, #6366F1); }
-  50% { outline-color: rgba(99, 102, 241, 0.4); }
+  0%, 100% { 
+    outline-color: var(--lmm-theme-root-accent, #6366F1);
+    outline-offset: 5px;
+    box-shadow: 0 0 12px rgba(99, 102, 241, 0.35);
+  }
+  50% { 
+    outline-color: rgba(99, 102, 241, 0.7);
+    outline-offset: 7px;
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.5);
+  }
 }
 
-/* Drop position indicators - outside node boundary for visibility */
+/* Drop position indicators - prominent lines outside node */
 .lmm-drop-before,
 .lmm-drop-after {
   position: absolute;
-  left: -12px;
-  right: -12px;
-  height: 4px;
-  background: var(--lmm-theme-root-accent, #6366F1);
-  border-radius: 2px;
+  left: -20px;
+  right: -20px;
+  height: 3px;
+  background: linear-gradient(90deg, 
+    transparent, 
+    var(--lmm-theme-root-accent, #6366F1) 15%, 
+    var(--lmm-theme-root-accent, #6366F1) 85%, 
+    transparent);
   pointer-events: none;
   z-index: 100;
+}
+
+/* Indicator end caps */
+.lmm-drop-before::before,
+.lmm-drop-before::after,
+.lmm-drop-after::before,
+.lmm-drop-after::after {
+  content: '';
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: var(--lmm-theme-root-accent, #6366F1);
+  border-radius: 50%;
+  top: 50%;
+  transform: translateY(-50%);
   box-shadow: 0 0 8px rgba(99, 102, 241, 0.6);
 }
 
+.lmm-drop-before::before,
+.lmm-drop-after::before {
+  left: 0;
+}
+
+.lmm-drop-before::after,
+.lmm-drop-after::after {
+  right: 0;
+}
+
 .lmm-drop-before {
-  top: -14px;
+  top: -18px;
 }
 
 .lmm-drop-after {
-  bottom: -14px;
+  bottom: -18px;
 }
 
 /* Canvas dragging state */
