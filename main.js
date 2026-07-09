@@ -619,6 +619,14 @@ class LightMindMapPlugin extends obsidian.Plugin {
     overlay._lmmSelected = null;
     overlay._lmmPendingEdit = null;
     overlay._lmmEditingNode = null;
+    overlay._lmmDragging = false;
+    overlay._lmmDragNode = null;
+    overlay._lmmDragClone = null;
+    overlay._lmmDropTarget = null;
+    overlay._lmmDropPosition = null;
+    overlay._lmmDragStartX = 0;
+    overlay._lmmDragStartY = 0;
+    overlay._lmmDragTimer = null;
 
     if (overlay._lmmCleanup) overlay._lmmCleanup();
     overlay.empty();
