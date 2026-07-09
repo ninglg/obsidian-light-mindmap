@@ -1438,25 +1438,14 @@ class LightMindMapPlugin extends obsidian.Plugin {
     // Clear previous target
     if (overlay._lmmDropTarget && overlay._lmmDropTarget._el) {
       overlay._lmmDropTarget._el.classList.remove('lmm-drop-target');
-    }
-    if (overlay._lmmDropTarget && overlay._lmmDropTarget._el) {
       const oldBefore = overlay._lmmDropTarget._el.querySelector('.lmm-drop-before');
       const oldAfter = overlay._lmmDropTarget._el.querySelector('.lmm-drop-after');
       if (oldBefore) oldBefore.remove();
       if (oldAfter) oldAfter.remove();
     }
     
-    // Find node under cursor
-    const elements = document.elementsFromPoint(x, y);
-    let targetNode = null;
-    
-    for (const el of elements) {
-      const nodeEl = el.closest('.lmm-node');
-      if (nodeEl) {
-        targetNode = this._findNodeByElement(overlay._lmmTreeInfo.tree, nodeEl);
-        break;
-      }
-    }
+    // Find node under cursor using expanded hit area
+    const targetNode = this._findDropTargetAtPoint(overlay, x, y);
     
     // Validate target
     if (targetNode && targetNode !== overlay._lmmDragNode) {
@@ -1484,6 +1473,61 @@ class LightMindMapPlugin extends obsidian.Plugin {
     
     overlay._lmmDropTarget = null;
     overlay._lmmDropPosition = null;
+  }
+
+  _findDropTargetAtPoint(overlay, x, y) {
+    // First try direct hit
+    const elements = document.elementsFromPoint(x, y);
+    for (const el of elements) {
+      const nodeEl = el.closest('.lmm-node');
+      if (nodeEl) {
+        const node = this._findNodeByElement(overlay._lmmTreeInfo.tree, nodeEl);
+        if (node && !node.isVirtual) return node;
+      }
+    }
+    
+    // If no direct hit, find nearest node by checking expanded areas
+    const nodes = this._collectVisibleNodes(overlay._lmmTreeInfo.tree);
+    let bestNode = null;
+    let bestDist = Infinity;
+    
+    for (const node of nodes) {
+      if (node.isVirtual || node === overlay._lmmDragNode) continue;
+      if (this._isDescendant(node, overlay._lmmDragNode)) continue;
+      
+      const rect = node._el.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      
+      // Expand detection area vertically for before/after
+      const expandedTop = rect.top - 30;
+      const expandedBottom = rect.bottom + 30;
+      
+      // Check if point is within expanded vertical range
+      if (y >= expandedTop && y <= expandedBottom) {
+        // Calculate horizontal distance
+        const distX = Math.abs(x - centerX);
+        const distY = Math.abs(y - centerY);
+        const dist = distX + distY * 2; // Prefer horizontal proximity
+        
+        if (dist < bestDist && dist < 200) {
+          bestDist = dist;
+          bestNode = node;
+        }
+      }
+    }
+    
+    return bestNode;
+  }
+
+  _collectVisibleNodes(node) {
+    const nodes = [node];
+    if (!node.collapsed) {
+      for (const child of node.children) {
+        nodes.push(...this._collectVisibleNodes(child));
+      }
+    }
+    return nodes;
   }
 
   _moveNode(overlay, sourceNode, targetNode, position) {
