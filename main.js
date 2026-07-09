@@ -1486,12 +1486,34 @@ class LightMindMapPlugin extends obsidian.Plugin {
   }
 
   _moveNode(overlay, sourceNode, targetNode, position) {
-    // 1. Remove from original parent
+    // 1. Calculate target index BEFORE removing source (important for same-parent reorder)
+    let targetParent, insertIndex;
+    
+    if (position === 'child') {
+      // Moving to become a child of target
+      targetParent = targetNode;
+      insertIndex = -1; // Will be pushed to end
+    } else {
+      // Moving before/after target (same parent)
+      targetParent = targetNode.parent;
+      const targetIndex = targetParent.children.indexOf(targetNode);
+      insertIndex = position === 'before' ? targetIndex : targetIndex + 1;
+      
+      // Adjust index if source is before target in same parent (removal shifts indices)
+      if (targetParent === sourceNode.parent) {
+        const sourceIndex = targetParent.children.indexOf(sourceNode);
+        if (sourceIndex < insertIndex) {
+          insertIndex--;
+        }
+      }
+    }
+    
+    // 2. Remove from original parent
     const sourceParent = sourceNode.parent;
     const sourceIndex = sourceParent.children.indexOf(sourceNode);
     sourceParent.children.splice(sourceIndex, 1);
     
-    // 2. Insert at new position
+    // 3. Insert at new position
     if (position === 'child') {
       sourceNode.parent = targetNode;
       targetNode.children.push(sourceNode);
@@ -1500,17 +1522,14 @@ class LightMindMapPlugin extends obsidian.Plugin {
         targetNode.collapsed = false;
       }
     } else {
-      const targetParent = targetNode.parent;
-      const targetIndex = targetParent.children.indexOf(targetNode);
-      const insertIndex = position === 'before' ? targetIndex : targetIndex + 1;
       sourceNode.parent = targetParent;
       targetParent.children.splice(insertIndex, 0, sourceNode);
     }
     
-    // 3. Update node depths
+    // 4. Update node depths
     this._updateNodeDepths(sourceNode);
     
-    // 4. Persist and re-render
+    // 5. Persist and re-render
     this._persistAndRelayout(overlay);
   }
 
