@@ -836,6 +836,15 @@ class LightMindMapPlugin extends obsidian.Plugin {
     el.addEventListener('mousedown', (e) => {
       if (el.isContentEditable) return;
       e.stopPropagation();
+      
+      // Start drag timer for non-root, non-virtual nodes
+      if (node.depth !== 0 && !node.isVirtual) {
+        overlay._lmmDragStartX = e.clientX;
+        overlay._lmmDragStartY = e.clientY;
+        overlay._lmmDragTimer = setTimeout(() => {
+          this._startDrag(overlay, node, e);
+        }, 200);
+      }
     });
     el.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -1393,6 +1402,148 @@ class LightMindMapPlugin extends obsidian.Plugin {
     if (relativeY < height * 0.25) return 'before';
     if (relativeY > height * 0.75) return 'after';
     return 'child';
+  }
+
+  _startDrag(overlay, node, e) {
+    overlay._lmmDragging = true;
+    overlay._lmmDragNode = node;
+    
+    // Make original node semi-transparent
+    node._el.classList.add('lmm-dragging-source');
+    
+    // Create clone
+    const clone = node._el.cloneNode(true);
+    clone.classList.remove('lmm-dragging-source');
+    clone.classList.add('lmm-drag-clone');
+    clone.style.left = e.clientX + 'px';
+    clone.style.top = e.clientY + 'px';
+    document.body.appendChild(clone);
+    overlay._lmmDragClone = clone;
+    
+    // Add dragging class to canvas
+    if (overlay._lmmCanvas) {
+      overlay._lmmCanvas.classList.add('lmm-node-dragging');
+    }
+  }
+
+  _updateDragClone(overlay, x, y) {
+    if (!overlay._lmmDragClone) return;
+    overlay._lmmDragClone.style.left = x + 'px';
+    overlay._lmmDragClone.style.top = y + 'px';
+  }
+
+  _detectDropTarget(overlay, x, y) {
+    // Clear previous target
+    if (overlay._lmmDropTarget && overlay._lmmDropTarget._el) {
+      overlay._lmmDropTarget._el.classList.remove('lmm-drop-target');
+    }
+    if (overlay._lmmDropTarget && overlay._lmmDropTarget._el) {
+      const oldBefore = overlay._lmmDropTarget._el.querySelector('.lmm-drop-before');
+      const oldAfter = overlay._lmmDropTarget._el.querySelector('.lmm-drop-after');
+      if (oldBefore) oldBefore.remove();
+      if (oldAfter) oldAfter.remove();
+    }
+    
+    // Find node under cursor
+    const elements = document.elementsFromPoint(x, y);
+    let targetNode = null;
+    
+    for (const el of elements) {
+      const nodeEl = el.closest('.lmm-node');
+      if (nodeEl) {
+        targetNode = this._findNodeByElement(overlay._lmmTreeInfo.tree, nodeEl);
+        break;
+      }
+    }
+    
+    // Validate target
+    if (targetNode && targetNode !== overlay._lmmDragNode) {
+      // Check if target is descendant of source
+      if (!this._isDescendant(targetNode, overlay._lmmDragNode)) {
+        overlay._lmmDropTarget = targetNode;
+        overlay._lmmDropPosition = this._getDropPosition(x, y, targetNode);
+        
+        // Highlight target
+        targetNode._el.classList.add('lmm-drop-target');
+        
+        // Show position indicator
+        if (overlay._lmmDropPosition === 'before') {
+          const indicator = document.createElement('div');
+          indicator.className = 'lmm-drop-before';
+          targetNode._el.appendChild(indicator);
+        } else if (overlay._lmmDropPosition === 'after') {
+          const indicator = document.createElement('div');
+          indicator.className = 'lmm-drop-after';
+          targetNode._el.appendChild(indicator);
+        }
+        return;
+      }
+    }
+    
+    overlay._lmmDropTarget = null;
+    overlay._lmmDropPosition = null;
+  }
+
+  _moveNode(overlay, sourceNode, targetNode, position) {
+    // 1. Remove from original parent
+    const sourceParent = sourceNode.parent;
+    const sourceIndex = sourceParent.children.indexOf(sourceNode);
+    sourceParent.children.splice(sourceIndex, 1);
+    
+    // 2. Insert at new position
+    if (position === 'child') {
+      sourceNode.parent = targetNode;
+      targetNode.children.push(sourceNode);
+      // Expand target if collapsed
+      if (targetNode.collapsed) {
+        targetNode.collapsed = false;
+      }
+    } else {
+      const targetParent = targetNode.parent;
+      const targetIndex = targetParent.children.indexOf(targetNode);
+      const insertIndex = position === 'before' ? targetIndex : targetIndex + 1;
+      sourceNode.parent = targetParent;
+      targetParent.children.splice(insertIndex, 0, sourceNode);
+    }
+    
+    // 3. Update node depths
+    this._updateNodeDepths(sourceNode);
+    
+    // 4. Persist and re-render
+    this._persistAndRelayout(overlay);
+  }
+
+  _endDrag(overlay) {
+    // Remove clone
+    if (overlay._lmmDragClone) {
+      overlay._lmmDragClone.remove();
+      overlay._lmmDragClone = null;
+    }
+    
+    // Clear source styling
+    if (overlay._lmmDragNode && overlay._lmmDragNode._el) {
+      overlay._lmmDragNode._el.classList.remove('lmm-dragging-source');
+    }
+    
+    // Clear target styling
+    if (overlay._lmmDropTarget && overlay._lmmDropTarget._el) {
+      overlay._lmmDropTarget._el.classList.remove('lmm-drop-target');
+      const oldBefore = overlay._lmmDropTarget._el.querySelector('.lmm-drop-before');
+      const oldAfter = overlay._lmmDropTarget._el.querySelector('.lmm-drop-after');
+      if (oldBefore) oldBefore.remove();
+      if (oldAfter) oldAfter.remove();
+    }
+    
+    // Remove canvas dragging class
+    if (overlay._lmmCanvas) {
+      overlay._lmmCanvas.classList.remove('lmm-node-dragging');
+    }
+    
+    // Reset state
+    overlay._lmmDragging = false;
+    overlay._lmmDragNode = null;
+    overlay._lmmDropTarget = null;
+    overlay._lmmDropPosition = null;
   }
 
   // ────────────────────────────────────────────────────────────────
