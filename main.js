@@ -1454,17 +1454,16 @@ class LightMindMapPlugin extends obsidian.Plugin {
         overlay._lmmDropTarget = targetNode;
         overlay._lmmDropPosition = this._getDropPosition(x, y, targetNode);
         
-        // Highlight target
-        targetNode._el.classList.add('lmm-drop-target');
-        
-        // Show position indicator
-        if (overlay._lmmDropPosition === 'before') {
+        // Different visual feedback for child vs before/after
+        if (overlay._lmmDropPosition === 'child') {
+          // Show circle highlight for becoming a child
+          targetNode._el.classList.add('lmm-drop-target');
+        } else {
+          // Show horizontal line indicator for before/after (no circle)
           const indicator = document.createElement('div');
-          indicator.className = 'lmm-drop-before';
-          targetNode._el.appendChild(indicator);
-        } else if (overlay._lmmDropPosition === 'after') {
-          const indicator = document.createElement('div');
-          indicator.className = 'lmm-drop-after';
+          indicator.className = overlay._lmmDropPosition === 'before' 
+            ? 'lmm-drop-before' 
+            : 'lmm-drop-after';
           targetNode._el.appendChild(indicator);
         }
         return;

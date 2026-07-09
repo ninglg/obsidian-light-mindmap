@@ -691,7 +691,7 @@
   transition: box-shadow 0.15s ease;
 }
 
-/* Drop target highlight - clear pulsing glow */
+/* Drop target highlight - for child mode only */
 .lmm-drop-target {
   outline: 2.5px solid var(--lmm-theme-root-accent, #6366F1);
   outline-offset: 5px;
@@ -712,54 +712,60 @@
   }
 }
 
-/* Drop position indicators - prominent lines outside node */
+/* Drop position indicators - horizontal lines for before/after mode */
 .lmm-drop-before,
 .lmm-drop-after {
   position: absolute;
-  left: -20px;
-  right: -20px;
-  height: 3px;
-  background: linear-gradient(90deg, 
-    transparent, 
-    var(--lmm-theme-root-accent, #6366F1) 15%, 
-    var(--lmm-theme-root-accent, #6366F1) 85%, 
-    transparent);
+  left: -30px;
+  right: -30px;
+  height: 4px;
+  background: var(--lmm-theme-root-accent, #6366F1);
+  border-radius: 2px;
   pointer-events: none;
   z-index: 100;
+  animation: lmm-line-glow 0.6s ease-in-out infinite;
 }
 
-/* Indicator end caps */
+@keyframes lmm-line-glow {
+  0%, 100% { 
+    box-shadow: 0 0 8px rgba(99, 102, 241, 0.5);
+    opacity: 1;
+  }
+  50% { 
+    box-shadow: 0 0 16px rgba(99, 102, 241, 0.8);
+    opacity: 0.85;
+  }
+}
+
+/* Arrow indicators on line ends */
 .lmm-drop-before::before,
+.lmm-drop-after::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 6px solid transparent;
+  border-right-color: var(--lmm-theme-root-accent, #6366F1);
+}
+
 .lmm-drop-before::after,
-.lmm-drop-after::before,
 .lmm-drop-after::after {
   content: '';
   position: absolute;
-  width: 10px;
-  height: 10px;
-  background: var(--lmm-theme-root-accent, #6366F1);
-  border-radius: 50%;
+  right: 0;
   top: 50%;
   transform: translateY(-50%);
-  box-shadow: 0 0 8px rgba(99, 102, 241, 0.6);
-}
-
-.lmm-drop-before::before,
-.lmm-drop-after::before {
-  left: 0;
-}
-
-.lmm-drop-before::after,
-.lmm-drop-after::after {
-  right: 0;
+  border: 6px solid transparent;
+  border-left-color: var(--lmm-theme-root-accent, #6366F1);
 }
 
 .lmm-drop-before {
-  top: -18px;
+  top: -20px;
 }
 
 .lmm-drop-after {
-  bottom: -18px;
+  bottom: -20px;
 }
 
 /* Canvas dragging state */
