@@ -1400,9 +1400,10 @@ class LightMindMapPlugin extends obsidian.Plugin {
     const relativeY = mouseY - rect.top;
     const height = rect.height;
     
-    // Expanded detection zones: 35% top = before, 35% bottom = after, middle = child
-    if (relativeY < height * 0.35) return 'before';
-    if (relativeY > height * 0.65) return 'after';
+    // Only center 40% triggers child mode, rest is before/after
+    // Top 30% = before, Bottom 30% = after, Middle 40% = child
+    if (relativeY < height * 0.3) return 'before';
+    if (relativeY > height * 0.7) return 'after';
     return 'child';
   }
 
@@ -1485,7 +1486,7 @@ class LightMindMapPlugin extends obsidian.Plugin {
       }
     }
     
-    // If no direct hit, find nearest node by checking expanded areas
+    // If no direct hit, find nearest node with generous vertical expansion
     const nodes = this._collectVisibleNodes(overlay._lmmTreeInfo.tree);
     let bestNode = null;
     let bestDist = Infinity;
@@ -1498,20 +1499,23 @@ class LightMindMapPlugin extends obsidian.Plugin {
       const centerX = rect.left + rect.width / 2;
       const centerY = rect.top + rect.height / 2;
       
-      // Expand detection area vertically for before/after
-      const expandedTop = rect.top - 30;
-      const expandedBottom = rect.bottom + 30;
+      // Very generous vertical expansion for before/after detection
+      const expandedTop = rect.top - 60;
+      const expandedBottom = rect.bottom + 60;
       
       // Check if point is within expanded vertical range
       if (y >= expandedTop && y <= expandedBottom) {
-        // Calculate horizontal distance
+        // Calculate distance - heavily favor horizontal proximity
         const distX = Math.abs(x - centerX);
         const distY = Math.abs(y - centerY);
-        const dist = distX + distY * 2; // Prefer horizontal proximity
         
-        if (dist < bestDist && dist < 200) {
-          bestDist = dist;
-          bestNode = node;
+        // Only consider if reasonably close horizontally
+        if (distX < rect.width * 1.5) {
+          const dist = distX + distY;
+          if (dist < bestDist) {
+            bestDist = dist;
+            bestNode = node;
+          }
         }
       }
     }
