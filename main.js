@@ -1354,6 +1354,47 @@ class LightMindMapPlugin extends obsidian.Plugin {
     return cur;
   }
 
+  _isDescendant(node, potentialAncestor) {
+    let current = node;
+    while (current) {
+      if (current === potentialAncestor) return true;
+      current = current.parent;
+    }
+    return false;
+  }
+
+  _updateNodeDepths(node) {
+    node.depth = node.parent ? node.parent.depth + 1 : 0;
+    if (node._el) {
+      node._el.className = node._el.className.replace(/lmm-node-d\d+/g, '');
+      node._el.classList.add('lmm-node-d' + node.depth);
+      if (node.depth === 0) node._el.classList.add('lmm-node-root');
+    }
+    for (const child of node.children) {
+      this._updateNodeDepths(child);
+    }
+  }
+
+  _findNodeByElement(node, el) {
+    if (node._el === el) return node;
+    if (node.collapsed) return null;
+    for (const child of node.children) {
+      const found = this._findNodeByElement(child, el);
+      if (found) return found;
+    }
+    return null;
+  }
+
+  _getDropPosition(mouseX, mouseY, targetNode) {
+    const rect = targetNode._el.getBoundingClientRect();
+    const relativeY = mouseY - rect.top;
+    const height = rect.height;
+    
+    if (relativeY < height * 0.25) return 'before';
+    if (relativeY > height * 0.75) return 'after';
+    return 'child';
+  }
+
   // ────────────────────────────────────────────────────────────────
   // Layout & geometry.
   // ────────────────────────────────────────────────────────────────
