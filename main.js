@@ -1400,8 +1400,9 @@ class LightMindMapPlugin extends obsidian.Plugin {
     const relativeY = mouseY - rect.top;
     const height = rect.height;
     
-    if (relativeY < height * 0.25) return 'before';
-    if (relativeY > height * 0.75) return 'after';
+    // Expanded detection zones: 35% top = before, 35% bottom = after, middle = child
+    if (relativeY < height * 0.35) return 'before';
+    if (relativeY > height * 0.65) return 'after';
     return 'child';
   }
 
