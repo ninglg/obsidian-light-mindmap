@@ -664,3 +664,65 @@
   margin: 4px 0;
   border-top: 1px solid var(--background-modifier-border);
 }
+
+/* ---------- Node Drag and Drop ---------- */
+
+/* Dragging source node */
+.lmm-dragging-source {
+  opacity: 0.5 !important;
+  pointer-events: none;
+  transform: none !important;
+}
+
+/* Clone following mouse */
+.lmm-drag-clone {
+  position: fixed;
+  pointer-events: none;
+  opacity: 0.85;
+  z-index: 1000;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  transition: none !important;
+}
+
+.lmm-drag-clone:hover {
+  transform: translate(-50%, -50%) scale(1.04);
+}
+
+/* Drop target highlight */
+.lmm-drop-target {
+  outline: 2px dashed var(--lmm-theme-root-accent, #6366F1);
+  outline-offset: 4px;
+  animation: lmm-pulse 1s infinite;
+}
+
+@keyframes lmm-pulse {
+  0%, 100% { outline-color: var(--lmm-theme-root-accent, #6366F1); }
+  50% { outline-color: rgba(99, 102, 241, 0.4); }
+}
+
+/* Drop position indicators */
+.lmm-drop-before,
+.lmm-drop-after {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--lmm-theme-root-accent, #6366F1);
+  border-radius: 2px;
+  pointer-events: none;
+  z-index: 100;
+}
+
+.lmm-drop-before {
+  top: -2px;
+}
+
+.lmm-drop-after {
+  bottom: -2px;
+}
+
+/* Canvas dragging state */
+.lmm-canvas.lmm-node-dragging {
+  cursor: grabbing !important;
+}
