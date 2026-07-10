@@ -290,18 +290,23 @@
   cursor: text;
   user-select: text;
   -webkit-user-select: text;
-  outline: 2px solid #6366F1;
-  outline-offset: 3px;
+  outline: none;
+  outline-offset: 0;
   z-index: 8;
-  min-width: 80px;
+  min-width: 120px;
   caret-color: currentColor;
-  transform: none !important;
+  transform: scale(1.03) !important;
+  box-shadow:
+    0 0 0 2px var(--lmm-color, #6366F1),
+    0 0 16px var(--lmm-color, #6366F1),
+    0 0 28px var(--lmm-color, #6366F1) !important;
+  border-width: 2px !important;
+  border-color: var(--lmm-color, #6366F1) !important;
+  opacity: 0.95;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
 }
 
-.lmm-node.lmm-editing.lmm-node-root,
-.lmm-node.lmm-editing.lmm-node-d1 {
-  caret-color: #fff;
-}
+
 
 /* Mention autocomplete popup */
 .lmm-mention-popup {
@@ -682,7 +687,7 @@
   pointer-events: none;
   opacity: 0.95;
   z-index: 1000;
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%) scale(1.08);
   box-shadow: 
     0 12px 32px rgba(0, 0, 0, 0.28),
     0 4px 12px rgba(0, 0, 0, 0.15),

@@ -943,7 +943,7 @@ class LightMindMapPlugin extends obsidian.Plugin {
         overlay._lmmDragStartY = e.clientY;
         overlay._lmmDragTimer = setTimeout(() => {
           this._startDrag(overlay, node, e);
-        }, 200);
+        }, 120);
       }
     });
     el.addEventListener('click', (e) => {
@@ -1037,6 +1037,7 @@ class LightMindMapPlugin extends obsidian.Plugin {
     el.contentEditable = 'true';
     el.classList.add('lmm-editing');
     el.spellcheck = false;
+    
     el.focus({ preventScroll: false });
     const range = document.createRange();
     range.selectNodeContents(el);
@@ -2644,25 +2645,69 @@ class LightMindMapPlugin extends obsidian.Plugin {
     if (this.app.isMobile) {
       const filePath = (file.parent ? file.parent.path + '/' : '') + defaultName;
       await this.app.vault.adapter.writeBinary(filePath, uint8);
+      new obsidian.Notice('Saved to vault: ' + filePath);
       return true;
     }
     
     try {
-      const electron = require('electron');
-      const win = electron.remote.BrowserWindow.getFocusedWindow();
-      const result = await electron.remote.dialog.showSaveDialog(win, {
-        title: 'Export Mindmap as PNG',
-        defaultPath: defaultName,
-        filters: [{ name: 'PNG Image', extensions: ['png'] }]
-      });
-      if (result.canceled || !result.filePath) return false;
-      require('fs').writeFileSync(result.filePath, Buffer.from(arrayBuffer));
-      return true;
+      if (window.showSaveFilePicker) {
+        const handle = await window.showSaveFilePicker({
+          suggestedName: defaultName,
+          types: [{ description: 'PNG Image', accept: { 'image/png': ['.png'] } }]
+        });
+        const writable = await handle.createWritable();
+        await writable.write(arrayBuffer);
+        await writable.close();
+        return true;
+      }
     } catch (e) {
-      const filePath = (file.parent ? file.parent.path + '/' : '') + defaultName;
-      await this.app.vault.adapter.writeBinary(filePath, uint8);
-      return true;
+      if (e.name === 'AbortError' || e.name === 'NotAllowedError') {
+        return false;
+      }
     }
+    
+    try {
+      const electron = require('electron');
+      const { dialog } = electron;
+      if (dialog && dialog.showSaveDialog) {
+        const result = await dialog.showSaveDialog({
+          title: 'Export Mindmap as PNG',
+          defaultPath: defaultName,
+          filters: [{ name: 'PNG Image', extensions: ['png'] }]
+        });
+        if (result && result.canceled) {
+          return false;
+        }
+        if (result && result.filePath) {
+          require('fs').writeFileSync(result.filePath, Buffer.from(arrayBuffer));
+          return true;
+        }
+      }
+    } catch (e) {}
+    
+    try {
+      const electron = require('electron');
+      if (electron.remote && electron.remote.dialog) {
+        const win = electron.remote.BrowserWindow.getFocusedWindow();
+        const result = await electron.remote.dialog.showSaveDialog(win, {
+          title: 'Export Mindmap as PNG',
+          defaultPath: defaultName,
+          filters: [{ name: 'PNG Image', extensions: ['png'] }]
+        });
+        if (result && result.canceled) {
+          return false;
+        }
+        if (result && result.filePath) {
+          require('fs').writeFileSync(result.filePath, Buffer.from(arrayBuffer));
+          return true;
+        }
+      }
+    } catch (e) {}
+    
+    const filePath = (file.parent ? file.parent.path + '/' : '') + defaultName;
+    await this.app.vault.adapter.writeBinary(filePath, uint8);
+    new obsidian.Notice('Saved to vault: ' + filePath);
+    return true;
   }
 
   async _exportPNG(overlay) {
